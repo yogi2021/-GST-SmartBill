@@ -5,6 +5,9 @@ import com.yogii.gstsmartbill.entity.Tenant;
 import com.yogii.gstsmartbill.service.TenantService;
 import org.springframework.web.bind.annotation.*;
 
+import com.yogii.gstsmartbill.dto.TenantRequest;
+import jakarta.validation.Valid;
+
 import java.util.List;
 
 @RestController
@@ -18,10 +21,20 @@ public class TenantController {
     }
 
     // Register a new shop
+
     @PostMapping
-    public Tenant registerTenant(@RequestBody Tenant tenant) {
+    public Tenant registerTenant(@Valid @RequestBody TenantRequest request) {
+
+        Tenant tenant = new Tenant();
+
+        tenant.setShopName(request.getShopName());
+        tenant.setGstin(request.getGstin());
+        tenant.setPhone(request.getPhone());
+        tenant.setEmail(request.getEmail());
+
         return tenantService.registerTenant(tenant);
     }
+
 
     // Get all shops
     @GetMapping
