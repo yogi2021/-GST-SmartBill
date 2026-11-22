@@ -1,8 +1,10 @@
 
 package com.yogii.gstsmartbill.service;
 
+import com.yogii.gstsmartbill.dto.RegisterRequest;
 import com.yogii.gstsmartbill.entity.Tenant;
 import com.yogii.gstsmartbill.entity.User;
+import com.yogii.gstsmartbill.exception.DuplicateResourceException;
 import com.yogii.gstsmartbill.repository.TenantRepository;
 import com.yogii.gstsmartbill.repository.UserRepository;
 import com.yogii.gstsmartbill.security.user.UserRole;
@@ -18,7 +20,6 @@ public class UserService {
     private final TenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // Constructor Injection
     public UserService(
             UserRepository userRepository,
             TenantRepository tenantRepository,
@@ -29,25 +30,51 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // Register shop and its owner
     @Transactional
-    public User registerOwner(Tenant tenant, User user) {
+    public User registerOwner(RegisterRequest request) {
 
-        // Save shop first
+        String shopEmail = request.getShopEmail().trim().toLowerCase();
+        String ownerEmail = request.getOwnerEmail().trim().toLowerCase();
+
+        if (tenantRepository.existsByEmail(shopEmail)) {
+            throw new DuplicateResourceException(
+                    "Shop email already registered"
+            );
+        }
+
+        String gstin = request.getGstin();
+
+        if (gstin != null && !gstin.isBlank()) {
+            gstin = gstin.trim().toUpperCase();
+
+            if (tenantRepository.existsByGstin(gstin)) {
+                throw new DuplicateResourceException(
+                        "GSTIN already registered"
+                );
+            }
+        } else {
+            gstin = null;
+        }
+
+        // Create Tenant
+        Tenant tenant = new Tenant();
+        tenant.setShopName(request.getShopName().trim());
+        tenant.setEmail(shopEmail);
+        tenant.setGstin(gstin);
+        tenant.setPhone(request.getPhone());
+
         Tenant savedTenant = tenantRepository.save(tenant);
 
-        // Connect owner with shop
-        user.setTenant(savedTenant);
-
-        // Assign OWNER role
-        user.setRole(UserRole.OWNER);
-
-        // Encrypt password using BCrypt
-        user.setPassword(
-                passwordEncoder.encode(user.getPassword())
+        // Create Owner
+        User owner = new User();
+        owner.setFullName(request.getOwnerName().trim());
+        owner.setEmail(ownerEmail);
+        owner.setPassword(
+                passwordEncoder.encode(request.getPassword())
         );
+        owner.setRole(UserRole.OWNER);
+        owner.setTenant(savedTenant);
 
-        // Save owner
-        return userRepository.save(user);
+        return userRepository.save(owner);
     }
 }
