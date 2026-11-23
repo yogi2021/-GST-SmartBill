@@ -100,7 +100,8 @@ public class Product {
     public String getSku() {
         return sku;
     }
-
+     // sku : Unique product code within a shop
+    //SKU uniqueness is scoped to the tenant, so two shops can use the same SKU.
     public void setSku(String sku) {
         this.sku = sku;
     }
@@ -112,11 +113,11 @@ public class Product {
     public void setHsnCode(String hsnCode) {
         this.hsnCode = hsnCode;
     }
-
+       // hsncode : GST HSN classification
     public BigDecimal getGstRate() {
         return gstRate;
     }
-
+       //gstRate : Product GST percentage
     public void setGstRate(BigDecimal gstRate) {
         this.gstRate = gstRate;
     }
@@ -124,7 +125,7 @@ public class Product {
     public BigDecimal getPurchasePrice() {
         return purchasePrice;
     }
-
+       //purchasePrice : 	Shop's purchase cost
     public void setPurchasePrice(BigDecimal purchasePrice) {
         this.purchasePrice = purchasePrice;
     }
