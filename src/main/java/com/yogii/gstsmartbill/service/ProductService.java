@@ -220,4 +220,16 @@ public class ProductService {
         }
         return sku.trim().toUpperCase();
     }
+
+    @Transactional(readOnly = true)
+    public List<ProductResponse> getLowStockProducts() {
+
+        Long tenantId = currentUserService.getCurrentTenantId();
+
+        return productRepository.findLowStockProducts(tenantId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
 }

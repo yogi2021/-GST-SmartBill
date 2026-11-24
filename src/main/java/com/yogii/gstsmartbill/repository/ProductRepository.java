@@ -10,6 +10,10 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByTenant_Id(Long tenantId);
@@ -32,4 +36,15 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Page<Product> findByTenant_IdAndActiveTrueAndProductNameContainingIgnoreCase(
             Long tenantId, String productName, Pageable pageable);
+
+
+    @Query("""
+    SELECT p FROM Product p
+    WHERE p.tenant.id = :tenantId
+    AND p.active = true
+    AND p.stockQuantity <= p.minStockLevel
+    ORDER BY p.stockQuantity ASC
+""")
+    List<Product> findLowStockProducts(
+            @Param("tenantId") Long tenantId);
 }

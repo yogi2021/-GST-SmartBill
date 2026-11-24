@@ -77,4 +77,13 @@ public class ProductController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/low-stock")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'BILLING_STAFF')")
+    public ResponseEntity<List<ProductResponse>> getLowStockProducts() {
+
+        return ResponseEntity.ok(
+                productService.getLowStockProducts()
+        );
+    }
 }
