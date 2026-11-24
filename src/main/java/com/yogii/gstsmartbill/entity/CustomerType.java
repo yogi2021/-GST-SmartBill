@@ -1,4 +1,6 @@
 package com.yogii.gstsmartbill.entity;
 
-public class CustomerType {
+public enum CustomerType {
+    B2B,
+    B2C
 }

@@ -31,4 +31,10 @@ public interface CustomerRepository
     // Search customers by name
     List<Customer> findByTenant_IdAndActiveTrueAndCustomerNameContainingIgnoreCase(
             Long tenantId, String customerName);
+
+    boolean existsByEmailAndTenant_IdAndIdNot(
+            String email, Long tenantId, Long id);
+
+    boolean existsByGstinAndTenant_IdAndIdNot(
+            String gstin, Long tenantId, Long id);
 }
