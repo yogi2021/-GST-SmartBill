@@ -15,6 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 @Service
 public class ProductService {
 
@@ -68,17 +73,55 @@ public class ProductService {
     }
 
     // 2. Get All Active Products
+
+
     @Transactional(readOnly = true)
-    public List<ProductResponse> getAllProducts() {
+    public Page<ProductResponse> getAllProducts(
+            String search, int page, int size) {
 
         Long tenantId = currentUserService.getCurrentTenantId();
 
-        return productRepository
-                .findByTenant_IdAndActiveTrue(tenantId)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+        // Validate pagination values
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                    "Page number cannot be negative");
+        }
+
+        if (size < 1 || size > 100) {
+            throw new IllegalArgumentException(
+                    "Page size must be between 1 and 100");
+        }
+
+        // Sorting by product name
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("productName").ascending()
+        );
+
+        Page<Product> products;
+
+        // Search or get all products
+        if (search == null || search.isBlank()) {
+
+            products = productRepository
+                    .findByTenant_IdAndActiveTrue(
+                            tenantId, pageable);
+
+        } else {
+
+            products = productRepository
+                    .findByTenant_IdAndActiveTrueAndProductNameContainingIgnoreCase(
+                            tenantId,
+                            search.trim(),
+                            pageable
+                    );
+        }
+
+        // Convert Product Entity to ProductResponse
+        return products.map(this::mapToResponse);
     }
+
 
     // 3. Get Product By ID
     @Transactional(readOnly = true)
