@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByTenant_Id(Long tenantId);
@@ -22,4 +25,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByTenant_IdAndProductNameContainingIgnoreCase(
             Long tenantId, String productName);
+
+    // pagination : for 1 page per limited product
+    Page<Product> findByTenant_IdAndActiveTrue(
+            Long tenantId, Pageable pageable);
+
+    Page<Product> findByTenant_IdAndActiveTrueAndProductNameContainingIgnoreCase(
+            Long tenantId, String productName, Pageable pageable);
 }
