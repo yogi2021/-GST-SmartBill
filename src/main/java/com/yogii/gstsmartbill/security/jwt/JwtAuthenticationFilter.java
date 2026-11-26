@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -43,10 +44,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 1. Read Authorization header
         String authHeader = request.getHeader("Authorization");
 
-        // 2. Check Bearer token
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -55,29 +54,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
-            // 3. Extract claims from JWT
+
             Claims claims = jwtService.extractAllClaims(token);
 
             String email = claims.getSubject();
 
-            Number tenantIdValue = claims.get("tenantId", Number.class);
+            Number tenantIdValue =
+                    claims.get("tenantId", Number.class);
 
             if (email == null || tenantIdValue == null) {
-                filterChain.doFilter(request, response);
+                response.sendError(
+                        HttpServletResponse.SC_UNAUTHORIZED,
+                        "Invalid JWT claims"
+                );
                 return;
             }
 
             Long tenantId = tenantIdValue.longValue();
 
-            // 4. Load user from the correct tenant
             User user = userRepository
                     .findByEmailAndTenant_Id(email, tenantId)
                     .orElse(null);
 
-            // 5. Validate token and authenticate user
-            if (user != null
-                    && jwtService.isTokenValid(token, user)
-                    && SecurityContextHolder.getContext()
+            if (user == null || !jwtService.isTokenValid(token, user)) {
+                response.sendError(
+                        HttpServletResponse.SC_UNAUTHORIZED,
+                        "Invalid or expired token"
+                );
+                return;
+            }
+
+            if (SecurityContextHolder.getContext()
                     .getAuthentication() == null) {
 
                 SimpleGrantedAuthority authority =
@@ -97,16 +104,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 .buildDetails(request)
                 );
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
+                SecurityContext context =
+                        SecurityContextHolder.createEmptyContext();
+
+                context.setAuthentication(authentication);
+
+                SecurityContextHolder.setContext(context);
             }
 
         } catch (JwtException | IllegalArgumentException ex) {
-            // Invalid, expired or malformed token
+
             SecurityContextHolder.clearContext();
+
+            response.sendError(
+                    HttpServletResponse.SC_UNAUTHORIZED,
+                    "Invalid or expired JWT"
+            );
+            return;
         }
 
-
         filterChain.doFilter(request, response);
+
+
     }
+
 }
