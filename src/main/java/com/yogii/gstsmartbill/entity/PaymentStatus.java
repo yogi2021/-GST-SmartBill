@@ -1,4 +1,7 @@
 package com.yogii.gstsmartbill.entity;
 
-public class PaymentStatus {
+public enum PaymentStatus {
+    PAID,
+    PARTIAL,
+    UNPAID
 }
